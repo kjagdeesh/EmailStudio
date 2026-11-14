@@ -1,0 +1,35 @@
+<svg class="studio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    @switch (Name)
+    {
+        case "library": <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /> break;
+        case "plus": <path d="M12 5v14M5 12h14" /> break;
+        case "content": <rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h8M8 17h5" /> break;
+        case "style": <circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18M12 3a9 9 0 0 1 0 18" /> break;
+        case "brand": <circle cx="12" cy="8" r="4" /><path d="M5 21a7 7 0 0 1 14 0" /> break;
+        case "image": <rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8" cy="9" r="1.5" /><path d="m4 18 5-5 3 3 3-4 5 6" /> break;
+        case "table": <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M3 14h18M10 9v11" /> break;
+        case "chart": <path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6" /> break;
+        case "link": <path d="M10 13a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-2 2M14 11a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l2-2" /> break;
+        case "desktop": <rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /> break;
+        case "mobile": <rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 19h2" /> break;
+        case "up": <path d="m6 14 6-6 6 6" /> break;
+        case "down": <path d="m6 10 6 6 6-6" /> break;
+        case "trash": <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /> break;
+        case "copy": <rect x="8" y="8" width="11" height="12" rx="2" /><path d="M15 8V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h1" /> break;
+        case "edit": <path d="m4 20 4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16zM14 7l3 3" /> break;
+        case "grip": <circle cx="9" cy="5" r=".8" /><circle cx="15" cy="5" r=".8" /><circle cx="9" cy="12" r=".8" /><circle cx="15" cy="12" r=".8" /><circle cx="9" cy="19" r=".8" /><circle cx="15" cy="19" r=".8" /> break;
+        case "reports": <path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6" /> break;
+        case "stocks": <path d="M4 19h16M5 16l5-5 3 3 6-7M15 7h4v4" /> break;
+        case "newsletters": <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /> break;
+        case "business": <rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" /> break;
+        case "about": <circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /> break;
+        case "book": <path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2zM4 5v17M8 7h7M8 11h7M8 15h5" /> break;
+        case "check": <path d="m5 12 4 4 10-10" /> break;
+        case "home": <path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-6h6v6" /> break;
+        default: <path d="M5 7h14M5 12h14M5 17h9" /> break;
+    }
+</svg>
+
+@code {
+    [Parameter] public string Name { get; set; } = "";
+}

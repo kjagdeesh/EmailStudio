@@ -1,0 +1,43 @@
+<div class="about-page">
+    <section class="about-hero">
+        <div><div class="eyebrow">ABOUT EMAIL STUDIO</div><h1>Made for messages<br /><em>worth opening.</em></h1><p>A local-first workspace for designing reusable emails, reports, and visual stories. Create your template once, then export it as HTML or JSON for your next project.</p><button class="button button-dark" @onclick="OnLibrary">Explore the library <StudioIcon Name="library" /></button></div>
+        <img src="studio-illustration.svg" alt="" />
+    </section>
+    <section class="about-details">
+        <div class="developer-card">
+            <div class="developer-avatar">J</div>
+            <div><span class="eyebrow">DEVELOPER &amp; MAINTAINER</span><h2>Jagdeesh</h2><p>Developer · GitHub @@kjagdeesh</p>
+                <div class="about-links"><a href="https://github.com/kjagdeesh" target="_blank" rel="noopener noreferrer">GitHub <StudioIcon Name="link" /></a><a href="https://www.linkedin.com/in/kammarijagdeesh" target="_blank" rel="noopener noreferrer">LinkedIn <StudioIcon Name="link" /></a></div>
+            </div>
+        </div>
+        <div class="about-project"><span class="eyebrow">THE WORKSPACE</span><h2>Built for reuse</h2><p>Design locally, personalize every section, and export HTML for your projects or JSON for future edits.</p><span class="project-tech">.NET 10</span><span class="project-tech">Local-first</span><span class="project-tech">HTML &amp; JSON</span></div>
+    </section>
+    <section class="pinned-section">
+        <div class="pinned-heading"><div><span class="eyebrow">MORE FROM JAGDEESH</span><h2>Pinned projects</h2><p>Projects featured on the developer's GitHub profile.</p></div><a href="https://github.com/kjagdeesh" target="_blank" rel="noopener noreferrer">View GitHub profile <StudioIcon Name="link" /></a></div>
+        <div class="project-grid">
+            @foreach (var project in Projects)
+            {
+                <a class="project-card" href="@project.Url" target="_blank" rel="noopener noreferrer">
+                    <span class="project-card-icon"><StudioIcon Name="@project.Icon" /></span>
+                    <span class="project-card-body"><strong>@project.Name</strong><span>@project.Description</span><small>@project.Technology</small></span>
+                    <span class="project-card-link"><StudioIcon Name="link" /></span>
+                </a>
+            }
+        </div>
+        <p class="project-note">Pinned projects are a local snapshot; visit the GitHub profile for the latest selection.</p>
+    </section>
+    <footer class="page-footer"><span>EMAIL STUDIO <i></i> YOUR DESIGN WORKSPACE</span><span>BUILT WITH CARE.</span></footer>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnLibrary { get; set; }
+
+    private static readonly (string Name, string Description, string Technology, string Icon, string Url)[] Projects =
+    [
+        ("AIPneumoScan", "A cross-platform .NET MAUI app using an ONNX model to analyze chest X-rays.", ".NET MAUI · ONNX", "image", "https://github.com/kjagdeesh/AIPneumoScan"),
+        ("JStitch", "Explore and convert JSON using tree views, tables, graphs, and C# models.", "JavaScript · JSON", "content", "https://github.com/kjagdeesh/JStitch"),
+        ("TasklyDev", "A Windows developer toolkit with utilities, diagnostics, and productivity tools.", "C# · WPF · .NET 10", "business", "https://github.com/kjagdeesh/TasklyDev"),
+        ("PrivacyLens", "An on-device Android dashboard for exploring app permission access.", ".NET MAUI · Android", "about", "https://github.com/kjagdeesh/PrivacyLens"),
+        ("Sim SMS Gateway", "A self-hosted Android SMS gateway with a REST API and dashboard.", ".NET MAUI · Android · REST", "newsletters", "https://github.com/kjagdeesh/Sim-SMS-Gateway")
+    ];
+}

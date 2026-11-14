@@ -1,0 +1,628 @@
+@page "/"
+@inject TemplateStore Store
+@inject IJSRuntime JS
+@using System.Text.Json
+
+<PageTitle>@(showLanding ? "Email Studio — Create and reuse" : showAbout ? "About — Email Studio" : showDocs ? "Documentation — Email Studio" : editing is null ? "Email Studio — Template Library" : $"{editing.Name} — Email Studio")</PageTitle>
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <button class="brand-lockup" @onclick="GoHome" aria-label="Email Studio home">
+            <span class="brand-symbol">e</span>
+            <span class="brand-name">email<span>studio</span><small>DESIGN WORKSPACE</small></span>
+        </button>
+        <div class="sidebar-label">WORKSPACE</div>
+        <nav class="workspace-nav" aria-label="Workspace">
+            <button class="nav-link @(showLanding ? "active" : "")" aria-label="Home" @onclick="GoHome">
+                <span class="nav-icon"><StudioIcon Name="home" /></span><span>Home</span>
+            </button>
+            <button class="nav-link @(editing is null && !showLanding && !showAbout && !showDocs ? "active" : "")" aria-label="Template library" @onclick="GoLibrary">
+                <span class="nav-icon"><StudioIcon Name="library" /></span><span>Template library</span><span class="nav-count">@templates.Count</span>
+            </button>
+            <button class="nav-link" aria-label="Create a design" @onclick="NewTemplate">
+                <span class="nav-icon"><StudioIcon Name="plus" /></span><span>Create a design</span>
+            </button>
+            <button class="nav-link @(showAbout ? "active" : "")" aria-label="About Email Studio" @onclick="GoAbout">
+                <span class="nav-icon"><StudioIcon Name="about" /></span><span>About</span>
+            </button>
+            <button class="nav-link @(showDocs ? "active" : "")" aria-label="Documentation" @onclick="GoDocs">
+                <span class="nav-icon"><StudioIcon Name="book" /></span><span>Documentation</span>
+            </button>
+        </nav>
+        <div class="sidebar-rule"></div>
+        <div class="sidebar-label">YOUR LIBRARY</div>
+        <div class="sidebar-categories">
+            @foreach (var item in categories)
+            {
+                <button class="side-category @(category == item && !showLanding && !showAbout && !showDocs && editing is null ? "active" : "")" @onclick="() => SelectCategory(item)">
+                    <span class="category-icon"><StudioIcon Name="@CategoryIcon(item)" /></span><span>@item</span>
+                </button>
+            }
+        </div>
+        <div class="sidebar-bottom">
+            <div class="sidebar-note">
+                <span class="note-icon">✦</span>
+                <strong>Your ideas, beautifully sent.</strong>
+                <p>Every design stays right here on your device.</p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-shell">
+        <header class="topbar">
+            <div class="breadcrumbs"><span>Workspace</span><span class="breadcrumb-slash">/</span><strong>@(showLanding ? "Home" : showAbout ? "About" : showDocs ? "Documentation" : editing is null ? "Library" : "Email editor")</strong></div>
+            <div class="topbar-right"><button class="topbar-about" @onclick="GoDocs">Docs</button><button class="topbar-about" @onclick="GoAbout">About</button><span class="topbar-avatar">ES</span></div>
+        </header>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="notice @(isError ? "error" : "")" role="status">@message<button aria-label="Dismiss message" @onclick="() => message = null">×</button></div>
+        }
+
+        @if (loading)
+        {
+            <div class="loading-state"><span class="loading-mark">e</span><p>Preparing your workspace…</p></div>
+        }
+        else if (editing is null && showLanding)
+        {
+            <StudioLanding TemplateCount="@templates.Count" ThemeCount="@TemplateStore.Themes.Length" OnCreate="NewTemplate" OnLibrary="BrowseLibrary" OnDocs="GoDocs" />
+        }
+        else if (editing is null && showAbout)
+        {
+            <AboutStudio OnLibrary="GoLibrary" />
+        }
+        else if (editing is null && showDocs)
+        {
+            <StudioDocumentation />
+        }
+        else if (editing is null)
+        {
+            <div class="library-page">
+                <section class="library-section">
+                    <div class="section-title-row">
+                        <div><div class="eyebrow muted-eyebrow">THE TEMPLATE LIBRARY</div><h2>Find your starting point</h2><p>Pick a design, then make every detail your own.</p></div>
+                        <div class="library-header-actions"><label class="button button-quiet import-control">Import JSON <InputFile OnChange="ImportAsync" accept=".json,application/json" /></label><button class="button button-quiet" @onclick="BackupAsync">Back up library</button><button class="button button-dark" @onclick="NewTemplate">Create a design <StudioIcon Name="plus" /></button></div>
+                    </div>
+                    <div class="library-toolbar">
+                        <div class="category-tabs" role="group" aria-label="Filter by category">
+                            <button class="category-tab @(category == "All" ? "selected" : "")" @onclick='() => category = "All"'>All designs <span>@templates.Count</span></button>
+                            @foreach (var item in categories)
+                            {
+                                <button class="category-tab @(category == item ? "selected" : "")" @onclick="() => category = item">@item</button>
+                            }
+                        </div>
+                        <label class="search-box"><span class="search-icon">⌕</span><input aria-label="Search templates" placeholder="Search designs…" @bind="search" @bind:event="oninput" /></label>
+                    </div>
+                    <div class="library-results">@filtered.Count designs</div>
+
+                    @if (filtered.Count == 0)
+                    {
+                        <div class="empty-state"><span>⌕</span><strong>No designs found</strong><p>Try a different search, or create a fresh design.</p><button class="button button-dark" @onclick="NewTemplate">Create a design</button></div>
+                    }
+                    else
+                    {
+                        <div class="template-grid">
+                            @foreach (var t in filtered)
+                            {
+                                var sampleText = t.Blocks.FirstOrDefault(b => b.Type == "text")?.Content ?? "";
+                                <article class="template-card">
+                                    <button class="template-preview" style="--tpl-bg:@t.BackgroundColor;--tpl-surface:@t.SurfaceColor;--tpl-text:@t.TextColor;--tpl-accent:@t.AccentColor" @onclick="() => Edit(t)" aria-label="Open @t.Name">
+                                        <div class="preview-paper">
+                                            <div class="preview-brand"><span class="preview-brand-icon">@BrandInitials(t.BrandName)</span><strong>@t.BrandName</strong><span class="preview-menu">···</span></div>
+                                            <div class="preview-eyebrow">@t.Category.ToUpperInvariant()</div>
+                                            <div class="preview-title">@t.Name</div>
+                                            <div class="preview-summary">@ShortCopy(sampleText)</div>
+                                            @if (t.Blocks.Any(b => b.Type == "image"))
+                                            {
+                                                var image = t.Blocks.First(b => b.Type == "image");
+                                                @if (!string.IsNullOrWhiteSpace(image.Url))
+                                                {
+                                                    <img class="preview-photo-real" src="@image.Url" alt="" loading="lazy" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="preview-photo"><span class="photo-orb"></span><span class="photo-mountain"></span><small>YOUR IMAGE</small></div>
+                                                }
+                                            }
+                                            @if (t.Blocks.Any(b => b.Type.Contains("chart")))
+                                            {
+                                                <div class="preview-data"><i></i><i></i><i></i><i></i><i></i><span>WEEKLY OVERVIEW</span></div>
+                                            }
+                                            else
+                                            {
+                                                <div class="preview-copy-line"><i></i><i></i></div>
+                                            }
+                                            <div class="preview-cta">View the update <span>→</span></div>
+                                            <div class="preview-signature">@t.BrandSignature</div>
+                                        </div>
+                                    </button>
+                                    <div class="template-card-content">
+                                        <div class="template-card-meta"><span class="category-label"><i style="--dot:@CategoryColor(t.Category)"></i>@t.Category</span><button class="duplicate-button" title="Duplicate design" aria-label="Duplicate @t.Name" @onclick="() => DuplicateAsync(t)"><StudioIcon Name="copy" /></button></div>
+                                        <button class="template-name" @onclick="() => Edit(t)">@t.Name</button>
+                                        <p>@t.Description</p>
+                                        <div class="template-card-footer"><span><span class="ready-dot"></span>Brand-ready starter</span><button @onclick="() => Edit(t)">Customize <span>↗</span></button></div>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+                <footer class="page-footer"><span>EMAIL STUDIO <i></i> YOUR DESIGN WORKSPACE</span><span>DESIGNED FOR THE DETAILS THAT MATTER.</span></footer>
+            </div>
+        }
+        else
+        {
+            <div class="editor-page">
+                <header class="editor-toolbar">
+                    <div class="editor-heading">
+                        <button class="back-button" @onclick="GoLibrary"><span>←</span> Library</button>
+                        <span class="toolbar-divider"></span>
+                        <div class="editor-title"><span class="editor-kicker">EMAIL DESIGN</span><strong>@editing.Name</strong></div>
+                        <span class="save-indicator @(IsDirty ? "dirty" : "")"><i></i>@(IsDirty ? "Unsaved changes" : "All changes saved")</span>
+                    </div>
+                    <div class="editor-actions">
+                        <button class="button button-outline" @onclick="SaveAsync" disabled="@(!IsDirty)">Save design</button>
+                        <div class="export-menu">
+                            <button class="button button-dark" disabled="@IsDirty" @onclick='() => ExportAsync("html")' title="@(IsDirty ? "Save before exporting" : "Download email HTML")">Export <span>↓</span></button>
+                            <button class="button button-export-json" disabled="@IsDirty" @onclick='() => ExportAsync("json")' title="Download template JSON">JSON</button>
+                        </div>
+                    </div>
+                </header>
+
+                @if (confirmLeave)
+                {
+                    <div class="leave-warning"><span>There are unsaved changes.</span><button @onclick="DiscardAndLeave">Discard changes</button><button @onclick="KeepEditing">Keep editing</button></div>
+                }
+
+                <div class="editor-workspace">
+                    <aside class="inspector">
+                        <div class="inspector-header"><div><div class="eyebrow muted-eyebrow">DESIGN CONTROLS</div><h2>Make it yours</h2></div><span class="inspector-spark">✳</span></div>
+                        <div class="inspector-tabs" role="tablist" aria-label="Design controls">
+                            <button class="inspector-tab @(editorTab == "content" ? "active" : "")" role="tab" aria-selected="@(editorTab == "content" ? "true" : "false")" @onclick='() => editorTab = "content"'><StudioIcon Name="content" /> Content</button>
+                            <button class="inspector-tab @(editorTab == "style" ? "active" : "")" role="tab" aria-selected="@(editorTab == "style" ? "true" : "false")" @onclick='() => editorTab = "style"'><StudioIcon Name="style" /> Style</button>
+                            <button class="inspector-tab @(editorTab == "brand" ? "active" : "")" role="tab" aria-selected="@(editorTab == "brand" ? "true" : "false")" @onclick='() => editorTab = "brand"'><StudioIcon Name="brand" /> Brand</button>
+                        </div>
+
+                        @if (editorTab == "content")
+                        {
+                            <div class="inspector-body">
+                                <div class="control-section">
+                                    <div class="control-section-title"><div><strong>Email structure</strong><small>Drag a handle to reorder, or use the arrow buttons.</small></div><span class="block-count">@editing.Blocks.Count / 100</span></div>
+                                    <div class="block-list">
+                                        @for (var index = 0; index < editing.Blocks.Count; index++)
+                                        {
+                                            var i = index;
+                                            var block = editing.Blocks[i];
+                                            <div class="block-row @(selectedBlock == i ? "active" : "") @(draggedBlock == i ? "dragging" : "")" @ondragover:preventDefault="true" @ondrop:preventDefault="true" @ondrop="() => DropBlock(i)">
+                                                <span class="drag-handle" draggable="true" title="Drag to reorder @BlockLabel(block.Type)" aria-hidden="true" @ondragstart="() => draggedBlock = i" @ondragend="() => draggedBlock = null"><StudioIcon Name="grip" /></span>
+                                                <button class="block-select" @onclick="() => selectedBlock = i"><span class="block-icon"><StudioIcon Name="@BlockIcon(block.Type)" /></span><span class="block-labels"><strong>@BlockLabel(block.Type)</strong><small>@(string.IsNullOrWhiteSpace(block.Title) ? "Untitled section" : block.Title)</small></span></button>
+                                                <div class="block-actions">
+                                                    <button class="icon-button" disabled="@(i == 0)" title="Move up" aria-label="Move block up" @onclick="() => MoveBlock(i, -1)"><StudioIcon Name="up" /></button>
+                                                    <button class="icon-button" disabled="@(i == editing.Blocks.Count - 1)" title="Move down" aria-label="Move block down" @onclick="() => MoveBlock(i, 1)"><StudioIcon Name="down" /></button>
+                                                    <button class="icon-button remove" title="Remove section" aria-label="Remove block" @onclick="() => RemoveBlock(i)"><StudioIcon Name="trash" /></button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="add-section">
+                                        <div class="quick-add" aria-label="Quick add sections">
+                                            @foreach (var type in new[] { "text", "image", "table", "bar chart" })
+                                            {
+                                                <button type="button" title="Add @BlockLabel(type)" disabled="@(editing.Blocks.Count >= 100)" @onclick="() => AddQuickBlock(type)"><StudioIcon Name="@BlockIcon(type)" /> @BlockLabel(type)</button>
+                                            }
+                                        </div>
+                                        <label class="visually-hidden" for="block-type">New section type</label>
+                                        <select id="block-type" @bind="newBlockType">@foreach (var type in TemplateStore.BlockTypes){<option value="@type">@BlockLabel(type)</option>}</select>
+                                        <button class="button button-soft" @onclick="AddBlock" disabled="@(editing.Blocks.Count >= 100)">＋ Add section</button>
+                                    </div>
+                                </div>
+
+                                @if (selectedBlock >= 0 && selectedBlock < editing.Blocks.Count)
+                                {
+                                    var block = editing.Blocks[selectedBlock];
+                                    <div class="control-section selected-block-editor">
+                                        <div class="control-section-title"><div><span class="selected-block-badge"><StudioIcon Name="@BlockIcon(block.Type)" /></span><strong>Edit @BlockLabel(block.Type)</strong></div><span class="selection-index">SECTION @(selectedBlock + 1)</span></div>
+                                        @if (block.Type != "divider")
+                                        {
+                                            <label class="field-label">@(block.Type == "image" ? "Image description" : block.Type == "button" ? "Button label" : "Heading")<input maxlength="300" @bind="block.Title" @bind:event="oninput" /></label>
+                                        }
+                                        @if (block.Type is "header" or "text" or "footer" or "table" || block.Type.Contains("chart"))
+                                        {
+                                            <label class="field-label">@(block.Type == "header" ? "Section label" : block.Type == "text" ? "Message" : block.Type == "footer" ? "Footer note" : block.Type == "table" ? "Table rows" : "Chart data")<textarea rows="@(block.Type.Contains("chart") || block.Type == "table" ? 6 : 5)" maxlength="20000" @bind="block.Content" @bind:event="oninput"></textarea></label>
+                                            @if (block.Type == "table") { <p class="field-hint">One row per line. Separate columns with |. The first row is the header.</p> }
+                                            @if (block.Type.Contains("chart")) { <p class="field-hint">Use one label,value pair per line. Forecasts can include ,forecast.</p> }
+                                        }
+                                        @if (block.Type == "table")
+                                        {
+                                            <fieldset class="table-style-picker"><legend>Table design</legend><div class="table-style-options">
+                                                @foreach (var style in new[] { "classic", "striped", "accent" })
+                                                {
+                                                    <button type="button" class="table-style-option @(block.TableStyle == style ? "active" : "")" aria-pressed="@(block.TableStyle == style ? "true" : "false")" @onclick="() => block.TableStyle = style"><span class="table-style-art @style"><i></i><i></i><i></i></span>@BlockLabel(style)</button>
+                                                }
+                                            </div></fieldset>
+                                        }
+                                        @if (block.Type is "button" or "image")
+                                        {
+                                            <label class="field-label">@(block.Type == "image" ? "Image URL" : "Link URL")<input maxlength="2000" placeholder="https://your-site.com/image.jpg" @bind="block.Url" @bind:event="oninput" /></label>
+                                            @if (block.Type == "image" && string.IsNullOrWhiteSpace(block.Url))
+                                            {
+                                                <div class="image-empty-state"><span>▧</span><div><strong>Branded image placeholder</strong><small>Your image preview appears here until you add a public image URL.</small></div></div>
+                                            }
+                                        }
+                                        <div class="section-colors"><div class="color-panel-heading"><div><strong>Section colors</strong><small>Customize this section only</small></div><StudioIcon Name="style" /></div>
+                                            <div class="color-field-list">
+                                                <ColorField Label="Background" Hint="Section surface" @bind-Value="block.BackgroundColor" />
+                                                <ColorField Label="Text" Hint="Headings &amp; copy" @bind-Value="block.TextColor" />
+                                                <ColorField Label="Accent" Hint="Highlights &amp; details" @bind-Value="block.AccentColor" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (editorTab == "style")
+                        {
+                            <div class="inspector-body">
+                                <div class="control-section">
+                                    <div class="control-section-title"><div><strong>Color direction</strong><small>Choose a palette to style the whole email.</small></div></div>
+                                    <div class="theme-grid">
+                                        @foreach (var theme in TemplateStore.Themes)
+                                        {
+                                            <button class="theme-swatch @(ThemeIsActive(theme) ? "active" : "")" title="@theme.Name palette" aria-label="Apply @theme.Name palette" aria-pressed="@(ThemeIsActive(theme) ? "true" : "false")" @onclick="() => ApplyTheme(theme)">
+                                                <span class="swatch-preview"><i style="background:@theme.Background"></i><i style="background:@theme.Surface"></i><i style="background:@theme.Accent"></i></span>
+                                                <span class="swatch-name">@theme.Name</span>
+                                                @if (ThemeIsActive(theme)) { <span class="swatch-check"><StudioIcon Name="check" /></span> }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="control-section">
+                                    <div class="control-section-title"><div><strong>Fine-tune the palette</strong><small>Update the entire email at once.</small></div></div>
+                                    <div class="color-controls">
+                                        <label>Canvas <span class="color-pick"><input type="color" @bind="editing.BackgroundColor" @bind:event="oninput" /><code>@editing.BackgroundColor</code></span></label>
+                                        <label>Surface <span class="color-pick"><input type="color" @bind="editing.SurfaceColor" @bind:event="oninput" @bind:after="ApplySurface" /><code>@editing.SurfaceColor</code></span></label>
+                                        <label>Text <span class="color-pick"><input type="color" @bind="editing.TextColor" @bind:event="oninput" @bind:after="ApplyText" /><code>@editing.TextColor</code></span></label>
+                                        <label>Accent <span class="color-pick"><input type="color" @bind="editing.AccentColor" @bind:event="oninput" @bind:after="ApplyAccent" /><code>@editing.AccentColor</code></span></label>
+                                    </div>
+                                </div>
+                                @if (selectedBlock >= 0 && selectedBlock < editing.Blocks.Count)
+                                {
+                                    var block = editing.Blocks[selectedBlock];
+                                    <div class="control-section">
+                                        <div class="control-section-title"><div><strong>Selected section</strong><small>@BlockLabel(block.Type) · @block.Title</small></div></div>
+                                        <div class="color-field-list">
+                                            <ColorField Label="Background" Hint="Section surface" @bind-Value="block.BackgroundColor" />
+                                            <ColorField Label="Text" Hint="Headings &amp; copy" @bind-Value="block.TextColor" />
+                                            <ColorField Label="Accent" Hint="Highlights &amp; details" @bind-Value="block.AccentColor" />
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="inspector-body">
+                                <div class="control-section">
+                                    <div class="control-section-title"><div><strong>Design details</strong><small>Name your design so it is easy to find later.</small></div></div>
+                                    <label class="field-label">Template name<input maxlength="120" @bind="editing.Name" @bind:event="oninput" /></label>
+                                    <label class="field-label">Category<input list="template-categories" maxlength="60" @bind="editing.Category" @bind:event="oninput" /><datalist id="template-categories">@foreach (var item in categories){<option value="@item"></option>}</datalist></label>
+                                    <label class="field-label">Short description<textarea maxlength="500" rows="3" @bind="editing.Description" @bind:event="oninput"></textarea></label>
+                                </div>
+                                <div class="control-section">
+                                    <div class="control-section-title"><div><strong>Your brand</strong><small>Make the design recognizable and personal.</small></div></div>
+                                    <label class="field-label">Brand or organization<input maxlength="100" @bind="editing.BrandName" @bind:event="oninput" /></label>
+                                    <label class="field-label">Signature name<input maxlength="200" @bind="editing.BrandSignature" @bind:event="oninput" /></label>
+                                    <label class="field-label">Logo image URL <span class="optional-label">OPTIONAL</span><input maxlength="2000" placeholder="https://your-site.com/logo.png" @bind="editing.BrandLogoUrl" @bind:event="oninput" /></label>
+                                    <label class="field-label">Website URL <span class="optional-label">OPTIONAL</span><input maxlength="2000" placeholder="https://your-site.com" @bind="editing.BrandWebsiteUrl" @bind:event="oninput" /></label>
+                                    <p class="field-hint">Logo and website images must use a public HTTPS URL to appear in recipients’ inboxes. Without a logo, your brand name is styled as a wordmark.</p>
+                                </div>
+                            </div>
+                        }
+                        <div class="inspector-footnote"><span class="status-dot"></span>Changes are private until you export and share.</div>
+                    </aside>
+
+                    <section class="preview-column">
+                        <div class="preview-toolbar">
+                            <div><span class="eyebrow muted-eyebrow">LIVE EMAIL PREVIEW</span><strong>@editing.Name</strong></div>
+                            <div class="preview-switch" role="group" aria-label="Preview width">
+                                <button class="@(previewMode == "desktop" ? "active" : "")" aria-label="Desktop preview" title="Desktop preview" @onclick='() => previewMode = "desktop"'><StudioIcon Name="desktop" /></button>
+                                <button class="@(previewMode == "mobile" ? "active" : "")" aria-label="Mobile preview" title="Mobile preview" @onclick='() => previewMode = "mobile"'><StudioIcon Name="mobile" /></button>
+                            </div>
+                        </div>
+                        <div class="preview-stage">
+                            <div class="email-canvas @(previewMode == "mobile" ? "mobile-preview" : "")"><iframe title="Live email preview" sandbox="" srcdoc="@PreviewHtml"></iframe></div>
+                        </div>
+                        <div class="preview-disclaimer"><span>ⓘ</span> Email clients may render styles differently. Send yourself a test before publishing.</div>
+                    </section>
+                </div>
+                <footer class="page-footer editor-footer"><span>EMAIL STUDIO <i></i> YOUR DESIGN WORKSPACE</span><span>CRAFTED WITH CARE.</span></footer>
+            </div>
+        }
+    </main>
+</div>
+
+@code {
+    private List<EmailTemplate> templates = [];
+    private EmailTemplate? editing;
+    private string? savedSnapshot, message;
+    private string category = "All", search = "", newBlockType = "text";
+    private string editorTab = "content", previewMode = "desktop";
+    private string? pendingCategory;
+    private int selectedBlock = -1;
+    private int? draggedBlock;
+    private bool loading = true, isError, confirmLeave, showLanding = true, showAbout, showDocs, pendingLanding, pendingAbout, pendingDocs, pendingCreate;
+    private List<string> categories => templates.Select(t => t.Category).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    private List<EmailTemplate> filtered => templates.Where(t =>
+        (category == "All" || t.Category.Equals(category, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(search) || t.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+         t.Description.Contains(search, StringComparison.OrdinalIgnoreCase) || t.Category.Contains(search, StringComparison.OrdinalIgnoreCase)))
+        .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    private bool IsDirty => editing is not null && Snapshot(editing) != savedSnapshot;
+    private static string Snapshot(EmailTemplate t) => JsonSerializer.Serialize(t, TemplateStore.JsonOptions);
+    private string PreviewHtml { get { try { return editing is null ? "" : EmailRenderer.Render(editing); } catch (InvalidDataException ex) { return $"<p>{System.Net.WebUtility.HtmlEncode(ex.Message)}</p>"; } } }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { templates = await Store.ListAsync(); }
+        catch (Exception ex) { ShowError($"Could not load the library: {ex.Message}"); }
+        loading = false;
+    }
+
+    private void Edit(EmailTemplate template)
+    {
+        showLanding = false;
+        showAbout = false;
+        showDocs = false;
+        editing = TemplateStore.Clone(template);
+        savedSnapshot = Snapshot(editing);
+        selectedBlock = editing.Blocks.Count > 0 ? 0 : -1;
+        editorTab = "content";
+        previewMode = "desktop";
+        confirmLeave = false;
+        message = null;
+    }
+
+    private void NewTemplate()
+    {
+        if (editing is not null && IsDirty) { pendingCategory = null; pendingLanding = false; pendingAbout = false; pendingDocs = false; pendingCreate = true; confirmLeave = true; return; }
+        showLanding = false;
+        showAbout = false;
+        showDocs = false;
+        editing = new EmailTemplate
+        {
+            Name = "A note worth opening",
+            Category = "Newsletters",
+            Description = "A thoughtful email, ready for your audience.",
+            BrandName = "ABC Company",
+            BrandSignature = "The ABC Company team",
+            Blocks =
+            [
+                new EmailBlock { Type = "header", Title = "A note worth opening", Content = "A THOUGHTFUL UPDATE" },
+                new EmailBlock { Type = "image", Title = "Your story image" },
+                new EmailBlock { Type = "text", Title = "Hello there,", Content = "A good message starts with a clear idea. Share what matters, add the details your reader needs, and make the next step simple." },
+                new EmailBlock { Type = "button", Title = "Read the update" },
+                new EmailBlock { Type = "footer", Title = "With appreciation", Content = "You are receiving this note because you signed up for our updates. You can update your preferences or unsubscribe at any time." }
+            ]
+        };
+        ApplyTheme(TemplateStore.Themes[0]);
+        savedSnapshot = null;
+        selectedBlock = 0;
+        editorTab = "content";
+        confirmLeave = false;
+        message = null;
+    }
+
+    private void GoHome() { pendingCategory = null; pendingAbout = false; pendingDocs = false; pendingCreate = false; pendingLanding = true; if (editing is not null && IsDirty) confirmLeave = true; else DiscardAndLeave(); }
+    private void GoLibrary() { pendingCategory = null; pendingLanding = false; pendingAbout = false; pendingDocs = false; pendingCreate = false; if (editing is not null && IsDirty) confirmLeave = true; else DiscardAndLeave(); }
+    private void BrowseLibrary() { category = "All"; search = ""; GoLibrary(); }
+    private void GoAbout() { pendingCategory = null; pendingCreate = false; pendingLanding = false; pendingDocs = false; pendingAbout = true; if (editing is not null && IsDirty) confirmLeave = true; else DiscardAndLeave(); }
+    private void GoDocs() { pendingCategory = null; pendingCreate = false; pendingLanding = false; pendingAbout = false; pendingDocs = true; if (editing is not null && IsDirty) confirmLeave = true; else DiscardAndLeave(); }
+    private void SelectCategory(string value)
+    {
+        if (editing is not null && IsDirty) { pendingCategory = value; pendingLanding = false; pendingAbout = false; pendingDocs = false; pendingCreate = false; confirmLeave = true; return; }
+        editing = null;
+        showLanding = false;
+        showAbout = false;
+        showDocs = false;
+        savedSnapshot = null;
+        category = value;
+    }
+    private void DiscardAndLeave()
+    {
+        var create = pendingCreate;
+        editing = null;
+        savedSnapshot = null;
+        confirmLeave = false;
+        showLanding = pendingLanding;
+        showAbout = pendingAbout;
+        showDocs = pendingDocs;
+        pendingLanding = false;
+        pendingAbout = false;
+        pendingDocs = false;
+        pendingCreate = false;
+        if (pendingCategory is not null) category = pendingCategory;
+        pendingCategory = null;
+        if (create) NewTemplate();
+    }
+    private void KeepEditing() { confirmLeave = false; pendingCategory = null; pendingLanding = false; pendingAbout = false; pendingDocs = false; pendingCreate = false; }
+
+    private async Task SaveAsync()
+    {
+        if (editing is null) return;
+        try
+        {
+            await Store.SaveEditedAsync(editing, savedSnapshot);
+            templates = await Store.ListAsync();
+            editing = TemplateStore.Clone(templates.First(t => t.Id == editing.Id));
+            savedSnapshot = Snapshot(editing);
+            ShowMessage("Your design is saved in the local library.");
+        }
+        catch (Exception ex) { ShowError($"Could not save your design: {ex.Message}"); }
+    }
+
+    private async Task DuplicateAsync(EmailTemplate template)
+    {
+        try
+        {
+            var copy = TemplateStore.Clone(template);
+            copy.Id = Guid.NewGuid();
+            copy.Name = copy.Name.Length > 113 ? copy.Name[..113] + " copy" : copy.Name + " copy";
+            await Store.SaveAsync(copy);
+            templates = await Store.ListAsync();
+            Edit(templates.First(t => t.Id == copy.Id));
+            ShowMessage("A reusable copy is ready to customize.");
+        }
+        catch (Exception ex) { ShowError($"Could not duplicate this design: {ex.Message}"); }
+    }
+
+    private async Task ImportAsync(InputFileChangeEventArgs args)
+    {
+        try
+        {
+            await using var stream = args.File.OpenReadStream(10 * 1024 * 1024);
+            using var document = await JsonDocument.ParseAsync(stream);
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                var library = document.RootElement.Deserialize<List<EmailTemplate>>(TemplateStore.JsonOptions)
+                    ?? throw new InvalidDataException("The selected file does not contain a library.");
+                var count = await Store.ImportLibraryAsync(library);
+                templates = await Store.ListAsync();
+                ShowMessage($"Imported {count} designs. Conflicting designs were added as copies; existing designs were kept.");
+                return;
+            }
+            if (args.File.Size > 1024 * 1024) throw new InvalidDataException("A single template must be no larger than 1 MB.");
+            if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("name", out _) || !document.RootElement.TryGetProperty("blocks", out _))
+                throw new InvalidDataException("Choose a JSON template exported from Email Studio.");
+            var imported = document.RootElement.Deserialize<EmailTemplate>(TemplateStore.JsonOptions) ?? throw new InvalidDataException("The selected file does not contain a template.");
+            imported.Id = Guid.NewGuid();
+            TemplateStore.Validate(imported);
+            await Store.SaveAsync(imported);
+            templates = await Store.ListAsync();
+            Edit(templates.First(t => t.Id == imported.Id));
+            ShowMessage("Your imported template is ready to edit.");
+        }
+        catch (Exception ex) { ShowError($"Could not import this template: {ex.Message}"); }
+    }
+
+    private async Task BackupAsync()
+    {
+        try
+        {
+            var library = await Store.ListAsync();
+            var content = JsonSerializer.Serialize(library, TemplateStore.JsonOptions);
+            if (System.Text.Encoding.UTF8.GetByteCount(content) > 10 * 1024 * 1024)
+                throw new InvalidDataException("This library exceeds the 10 MB import limit. Export designs individually as JSON.");
+            await JS.InvokeVoidAsync("emailStudioStorage.download", "email-studio-library.json", "application/json", content);
+        }
+        catch (Exception ex) { ShowError($"Could not back up the library: {ex.Message}"); }
+    }
+
+    private async Task ExportAsync(string format)
+    {
+        if (editing is null || IsDirty) return;
+        try
+        {
+            var content = format == "html" ? EmailRenderer.Render(editing) : JsonSerializer.Serialize(editing, TemplateStore.JsonOptions);
+            await JS.InvokeVoidAsync("emailStudioStorage.download", $"email-template-{editing.Id:N}.{format}",
+                format == "html" ? "text/html;charset=utf-8" : "application/json", content);
+        }
+        catch (Exception ex) { ShowError($"Could not export this design: {ex.Message}"); }
+    }
+
+    private void ApplyTheme(EmailTheme theme)
+    {
+        if (editing is null) return;
+        editing.BackgroundColor = theme.Background;
+        editing.SurfaceColor = theme.Surface;
+        editing.TextColor = theme.Text;
+        editing.AccentColor = theme.Accent;
+        foreach (var block in editing.Blocks)
+        {
+            block.BackgroundColor = theme.Surface;
+            block.TextColor = block.Type == "button" ? TemplateStore.ContrastText(theme.Accent) : theme.Text;
+            block.AccentColor = theme.Accent;
+        }
+    }
+
+    private bool ThemeIsActive(EmailTheme theme) => editing is not null &&
+        editing.BackgroundColor.Equals(theme.Background, StringComparison.OrdinalIgnoreCase) &&
+        editing.SurfaceColor.Equals(theme.Surface, StringComparison.OrdinalIgnoreCase) &&
+        editing.TextColor.Equals(theme.Text, StringComparison.OrdinalIgnoreCase) &&
+        editing.AccentColor.Equals(theme.Accent, StringComparison.OrdinalIgnoreCase);
+
+    private void ApplySurface() { if (editing is not null) foreach (var block in editing.Blocks) block.BackgroundColor = editing.SurfaceColor; }
+    private void ApplyText() { if (editing is not null) foreach (var block in editing.Blocks) block.TextColor = editing.TextColor; }
+    private void ApplyAccent()
+    {
+        if (editing is null) return;
+        foreach (var block in editing.Blocks)
+        {
+            block.AccentColor = editing.AccentColor;
+            if (block.Type == "button") block.TextColor = TemplateStore.ContrastText(editing.AccentColor);
+        }
+    }
+
+    private void AddBlock()
+    {
+        if (editing is null || editing.Blocks.Count >= 100) return;
+        var block = new EmailBlock
+        {
+            Type = newBlockType,
+            Title = newBlockType == "image" ? "Your story image" : BlockLabel(newBlockType),
+            BackgroundColor = editing.SurfaceColor,
+            TextColor = newBlockType == "button" ? TemplateStore.ContrastText(editing.AccentColor) : editing.TextColor,
+            AccentColor = editing.AccentColor
+        };
+        if (newBlockType == "table") block.Content = "Item | Status | Owner\nExample | On track | Team";
+        else if (newBlockType.Contains("chart")) block.Content = "January,42\nFebruary,58\nMarch,71" + (newBlockType == "forecast chart" ? ",forecast" : "");
+        else if (newBlockType is "text" or "footer") block.Content = "Add your message here.";
+        editing.Blocks.Add(block);
+        selectedBlock = editing.Blocks.Count - 1;
+    }
+
+    private void AddQuickBlock(string type) { newBlockType = type; AddBlock(); }
+
+    private void DropBlock(int target)
+    {
+        if (editing is null || draggedBlock is not int source || source < 0 || source >= editing.Blocks.Count || target < 0 || target >= editing.Blocks.Count) return;
+        draggedBlock = null;
+        if (source == target) return;
+        var selected = selectedBlock >= 0 && selectedBlock < editing.Blocks.Count ? editing.Blocks[selectedBlock] : null;
+        var block = editing.Blocks[source];
+        editing.Blocks.RemoveAt(source);
+        editing.Blocks.Insert(target, block);
+        selectedBlock = selected is null ? -1 : editing.Blocks.IndexOf(selected);
+    }
+
+    private void MoveBlock(int index, int direction)
+    {
+        if (editing is null) return;
+        var target = index + direction;
+        if (target < 0 || target >= editing.Blocks.Count) return;
+        (editing.Blocks[index], editing.Blocks[target]) = (editing.Blocks[target], editing.Blocks[index]);
+        if (selectedBlock == index) selectedBlock = target;
+        else if (selectedBlock == target) selectedBlock = index;
+    }
+
+    private void RemoveBlock(int index)
+    {
+        if (editing is null) return;
+        editing.Blocks.RemoveAt(index);
+        if (selectedBlock == index) selectedBlock = Math.Min(index, editing.Blocks.Count - 1);
+        else if (selectedBlock > index) selectedBlock--;
+    }
+
+    private static string BlockLabel(string type) => System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(type);
+    private static string BlockIcon(string type) => type switch { "image" => "image", "table" => "table", "button" => "link", _ when type.Contains("chart") => "chart", _ => "content" };
+    private static string CategoryIcon(string category) => category switch { "Reports" => "reports", "Stocks" => "stocks", "Tables" => "table", "Newsletters" => "newsletters", "Business" => "business", "Forecasts" => "chart", _ => "library" };
+    private static string ShortCopy(string text) => text.Length > 105 ? text[..105] + "…" : text;
+    private static string BrandInitials(string name)
+    {
+        if (name == "ABC Company") return "ABC";
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return words.Length > 1 ? string.Concat(words.Take(2).Select(word => char.ToUpperInvariant(word[0]))) : name[..Math.Min(2, name.Length)].ToUpperInvariant();
+    }
+    private static string CategoryColor(string value) => value switch { "Reports" => "#ce8e55", "Stocks" => "#538b77", "Tables" => "#7487b7", "Newsletters" => "#b97c84", "Business" => "#947aaf", "Forecasts" => "#5c9ca2", _ => "#a0a9a7" };
+    private void ShowMessage(string text) { message = text; isError = false; }
+    private void ShowError(string text) { message = text; isError = true; }
+}

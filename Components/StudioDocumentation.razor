@@ -1,0 +1,54 @@
+<div class="documentation-page">
+    <header class="docs-hero">
+        <div class="docs-hero-icon"><StudioIcon Name="book" /></div>
+        <div><div class="eyebrow">EMAIL STUDIO GUIDE</div><h1>Everything you need to create.</h1><p>From your first design to an email-ready export, learn the workspace at your own pace.</p></div>
+    </header>
+    <div class="docs-grid">
+        <section class="docs-card docs-start">
+            <div class="docs-title"><span><StudioIcon Name="plus" /></span><div><h2>Getting started</h2><p>Start with a design you can make your own.</p></div></div>
+            <ol>
+                <li>Choose <strong>Create a design</strong>, or open a starter from the library. Search or filter by category to find one.</li>
+                <li>In <strong>Content</strong>, select a section to edit its heading, message, image, table, or chart data. Use the drag handle or arrow buttons to reorder sections.</li>
+                <li>Use <strong>Style</strong> to apply a palette or adjust colors. Use <strong>Brand</strong> to change the template details, logo, website, and signature.</li>
+                <li>Preview the email in desktop or mobile view, then choose <strong>Save design</strong>. Save before exporting or leaving the editor.</li>
+            </ol>
+        </section>
+        <section class="docs-card">
+            <div class="docs-title"><span><StudioIcon Name="style" /></span><div><h2>Colors &amp; branding</h2><p>Make each email feel like yours.</p></div></div>
+            <p>Select any section to adjust its background, text, and accent independently. Applying a theme replaces all section colors; the global surface, text, and accent controls also update all sections.</p>
+            <p>Provide a public HTTP(S) image URL for a logo or image. Without one, the email uses a brand monogram or image placeholder. Use accessible HTTPS URLs for images sent to recipients.</p>
+        </section>
+        <section class="docs-card">
+            <div class="docs-title"><span><StudioIcon Name="table" /></span><div><h2>Tables</h2><p>Turn structured details into readable rows.</p></div></div>
+            <p>Enter one row per line and separate columns with <code>|</code>. The first row is the header. Choose classic, striped, or accent styling. A table supports up to 100 rows and 12 columns.</p>
+            <pre>Item | Status | Owner
+Launch | On track | Team
+Review | Planned | Alex</pre>
+        </section>
+        <section class="docs-card">
+            <div class="docs-title"><span><StudioIcon Name="chart" /></span><div><h2>Charts &amp; forecasts</h2><p>Show the numbers behind your story.</p></div></div>
+            <p>Enter one <code>label,value</code> pair per line, using non-negative numbers. Up to 50 rows are supported. Add <code>,forecast</code> only to forecast chart rows; the app displays the values you provide and does not calculate projections.</p>
+            <pre>January,42
+February,55
+March,64,forecast</pre>
+            <p>Line, area, pie, and doughnut charts use inline SVG with a visible data-table fallback. Some email clients strip SVG. Charts are static.</p>
+        </section>
+        <section class="docs-card">
+            <div class="docs-title"><span><StudioIcon Name="link" /></span><div><h2>Import &amp; export</h2><p>Reuse your work across projects.</p></div></div>
+            <p>After saving, export <strong>HTML</strong> for an email workflow or <strong>JSON</strong> for later editing. Import creates a new copy from Email Studio JSON, up to 1 MB. Import also accepts a library backup or the previous server version's <code>App_Data\templates.json</code> (up to 10 MB). Identical designs are skipped; conflicting IDs are imported as copies. Arbitrary HTML and third-party template formats cannot be imported.</p>
+            <p>Always test the exported email in your target clients; support for SVG, rounded corners, and other styling varies.</p>
+        </section>
+        <section class="docs-card">
+            <div class="docs-title"><span><StudioIcon Name="about" /></span><div><h2>Storage &amp; privacy</h2><p>Keep a backup of your work.</p></div></div>
+            <p>Your library is stored in this browser's IndexedDB for this site. Use <strong>Back up library</strong> in the library and keep the downloaded JSON somewhere safe. Backups are limited to 10 MB; export larger libraries as individual designs. Browser data can be cleared or evicted, and is not shared across browsers or devices.</p>
+            <p>Public image and link URLs are accessed when used. Anyone with access to this browser profile can access its library.</p>
+        </section>
+        <section class="docs-card docs-setup">
+            <div class="docs-title"><span><StudioIcon Name="content" /></span><div><h2>Run locally</h2><p>Use the .NET 10 SDK from the project directory.</p></div></div>
+            <pre>dotnet run</pre>
+            <p>Open the address printed in the terminal. To run the focused checks:</p>
+            <pre>dotnet run --project Checks\EmailStudio.Checks.csproj</pre>
+        </section>
+    </div>
+    <footer class="page-footer"><span>EMAIL STUDIO <i></i> DOCUMENTATION</span><span>DESIGN. SAVE. SHARE.</span></footer>
+</div>

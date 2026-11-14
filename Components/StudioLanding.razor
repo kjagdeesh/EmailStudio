@@ -1,0 +1,64 @@
+<div class="landing-page">
+    <section class="library-hero landing-hero">
+        <div class="hero-copy">
+            <div class="eyebrow"><span class="eyebrow-mark">✳</span> YOUR CREATIVE EMAIL WORKSPACE</div>
+            <h1>Better emails.<br /><em>Less starting over.</em></h1>
+            <p>Create, customize, and reuse beautiful email templates for reports, newsletters, and everyday updates—all in one local workspace.</p>
+            <div class="hero-actions">
+                <button class="button button-dark" @onclick="OnCreate">Create a design <StudioIcon Name="plus" /></button>
+                <button class="button button-quiet" @onclick="OnLibrary">Explore templates <StudioIcon Name="library" /></button>
+            </div>
+            <div class="hero-trust"><span>●</span> Saved locally <i></i> HTML &amp; JSON export</div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><img src="studio-illustration.svg" alt="" /></div>
+    </section>
+
+    <section class="landing-proof" aria-label="Email Studio at a glance">
+        <div><strong>@TemplateCount</strong><span>designs in your library</span></div>
+        <div><strong>@ThemeCount</strong><span>ready-to-use palettes</span></div>
+        <div><strong>HTML <small>+</small> JSON</strong><span>export for your projects</span></div>
+    </section>
+
+    <section class="landing-section">
+        <div class="landing-heading"><div><span class="eyebrow">WHY EMAIL STUDIO</span><h2>More time for the message.<br /><em>Less time on the layout.</em></h2></div><p>Creating a useful email should not mean rebuilding the same layout for every update. Start with a solid foundation and focus on what you want to share.</p></div>
+        <div class="benefit-grid">
+            <article class="benefit-card"><span class="benefit-icon"><StudioIcon Name="library" /></span><h3>Start ahead</h3><p>Choose from ready-to-edit designs for reports, newsletters, stocks, and more instead of building each email from scratch.</p></article>
+            <article class="benefit-card"><span class="benefit-icon"><StudioIcon Name="edit" /></span><h3>Make it yours</h3><p>Edit content, reorder sections, and adjust colors and branding while the live preview shows your changes.</p></article>
+            <article class="benefit-card"><span class="benefit-icon"><StudioIcon Name="copy" /></span><h3>Reuse your work</h3><p>Save a design, duplicate it for the next update, and export HTML for your projects or JSON for future edits.</p></article>
+        </div>
+    </section>
+
+    <section class="landing-workflow">
+        <div class="workflow-copy"><span class="eyebrow">SIMPLE BY DESIGN</span><h2>From idea to email<br /><em>in three steps.</em></h2><p>No design handoff needed. Pick a starting point, personalize the details, and take your template where you need it.</p><button class="button button-dark" @onclick="OnCreate">Start creating <StudioIcon Name="plus" /></button></div>
+        <div class="workflow-steps">
+            <div><span>01</span><p><strong>Pick a starting point</strong><small>Browse the library or create a fresh design.</small></p></div>
+            <div><span>02</span><p><strong>Personalize your email</strong><small>Add your content, colors, logo, tables, and charts.</small></p></div>
+            <div><span>03</span><p><strong>Save and export</strong><small>Preview your work and export HTML or reusable JSON.</small></p></div>
+        </div>
+    </section>
+
+    <section class="landing-section">
+        <div class="landing-centered"><span class="eyebrow">MADE FOR REAL WORK</span><h2>One workspace, many ways to communicate.</h2><p>Bring your updates together with flexible sections designed for the information you need to share.</p></div>
+        <div class="use-grid">
+            <article><span><StudioIcon Name="reports" /></span><div><h3>Reports &amp; insights</h3><p>Pair your story with tables and charts to make results easier to scan.</p></div></article>
+            <article><span><StudioIcon Name="newsletters" /></span><div><h3>Newsletters &amp; updates</h3><p>Give recurring announcements a consistent look and a clear next step.</p></div></article>
+            <article><span><StudioIcon Name="business" /></span><div><h3>Developer handoff</h3><p>Export saved HTML for an email workflow and keep JSON for future changes.</p></div></article>
+        </div>
+    </section>
+
+    <section class="landing-local">
+        <span class="local-icon"><StudioIcon Name="about" /></span>
+        <div><span class="eyebrow">YOUR WORK, YOUR WORKSPACE</span><h2>Built to work locally.</h2><p>Your library is stored in this browser. Back it up to keep your work or move it to another browser. Public image URLs may be accessed when used.</p></div>
+        <button class="button button-outline" @onclick="OnDocs">Read the guide <StudioIcon Name="book" /></button>
+    </section>
+    <section class="landing-cta"><div><h2>Ready to make your next email?</h2><p>Start with a design and make every detail your own.</p></div><button class="button landing-cta-button" @onclick="OnLibrary">Browse templates <StudioIcon Name="library" /></button></section>
+    <footer class="page-footer"><span>EMAIL STUDIO <i></i> YOUR DESIGN WORKSPACE</span><span>DESIGN. SAVE. REUSE.</span></footer>
+</div>
+
+@code {
+    [Parameter] public int TemplateCount { get; set; }
+    [Parameter] public int ThemeCount { get; set; }
+    [Parameter] public EventCallback OnCreate { get; set; }
+    [Parameter] public EventCallback OnLibrary { get; set; }
+    [Parameter] public EventCallback OnDocs { get; set; }
+}

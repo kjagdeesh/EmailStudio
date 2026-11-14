@@ -1,0 +1,17 @@
+<label class="color-field">
+    <span class="color-field-swatch" style="--swatch:@Value">
+        <input type="color" value="@Value" @oninput="ChangeAsync" aria-label="@($"{Label} color")" />
+    </span>
+    <span class="color-field-details"><strong>@Label</strong><small>@Hint</small></span>
+    <code>@Value.ToUpperInvariant()</code>
+    <StudioIcon Name="edit" />
+</label>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Hint { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "#000000";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private Task ChangeAsync(ChangeEventArgs args) => ValueChanged.InvokeAsync(args.Value?.ToString() ?? Value);
+}
