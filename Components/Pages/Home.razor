@@ -165,6 +165,7 @@
                         <div class="export-menu">
                             <button class="button button-dark" disabled="@IsDirty" @onclick='() => ExportAsync("html")' title="@(IsDirty ? "Save before exporting" : "Download email HTML")">Export <span>↓</span></button>
                             <button class="button button-export-json" disabled="@IsDirty" @onclick='() => ExportAsync("json")' title="Download template JSON">JSON</button>
+                            <button class="button button-export-cs" disabled="@IsDirty" @onclick='() => ExportAsync("cs")' title="Download C# template class">C#</button>
                         </div>
                     </div>
                 </header>
@@ -522,9 +523,33 @@
         if (editing is null || IsDirty) return;
         try
         {
-            var content = format == "html" ? EmailRenderer.Render(editing) : JsonSerializer.Serialize(editing, TemplateStore.JsonOptions);
-            await JS.InvokeVoidAsync("emailStudioStorage.download", $"email-template-{editing.Id:N}.{format}",
-                format == "html" ? "text/html;charset=utf-8" : "application/json", content);
+            string content;
+            string fileName;
+            string mimeType;
+
+            switch (format)
+            {
+                case "html":
+                    content = EmailRenderer.Render(editing);
+                    fileName = $"email-template-{editing.Id:N}.html";
+                    mimeType = "text/html;charset=utf-8";
+                    break;
+                case "json":
+                    content = JsonSerializer.Serialize(editing, TemplateStore.JsonOptions);
+                    fileName = $"email-template-{editing.Id:N}.json";
+                    mimeType = "application/json";
+                    break;
+                case "cs":
+                    var className = CSharpEmailExporter.GetClassName(editing.Name);
+                    content = CSharpEmailExporter.Export(editing);
+                    fileName = $"{className}.cs";
+                    mimeType = "text/plain;charset=utf-8";
+                    break;
+                default:
+                    return;
+            }
+
+            await JS.InvokeVoidAsync("emailStudioStorage.download", fileName, mimeType, content);
         }
         catch (Exception ex) { ShowError($"Could not export this design: {ex.Message}"); }
     }

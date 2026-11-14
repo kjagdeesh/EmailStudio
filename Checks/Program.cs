@@ -140,7 +140,18 @@ try
     roundtrip.BrandLogoUrl = "";
     pie.Content = "Future,not-a-number";
     try { TemplateStore.Validate(roundtrip); throw new Exception("Invalid chart accepted"); } catch (InvalidDataException) { }
-    Console.WriteLine("Passed seed, theme, persistence, JSON, HTML, chart and validation checks.");
+    
+    // C# Export checks
+    var csCode = CSharpEmailExporter.Export(seeds.First());
+    Check(csCode.Contains("public static class"), "C# export generates static class");
+    Check(csCode.Contains("public static string Render("), "C# export generates Render method");
+    Check(csCode.Contains("public static string GenerateHtml("), "C# export generates GenerateHtml method");
+    Check(csCode.Contains("public sealed class EmailModel"), "C# export generates EmailModel class");
+    Check(csCode.Contains("html.Append($\"\"\""), "C# export uses string interpolation");
+    Check(csCode.Contains("brandName"), "C# export parameterizes brandName");
+    Check(csCode.Contains("brandSignature"), "C# export parameterizes brandSignature");
+
+    Console.WriteLine("Passed seed, theme, persistence, JSON, HTML, C# export, chart and validation checks.");
 }
 finally
 {

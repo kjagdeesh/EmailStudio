@@ -213,7 +213,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .button-outline:hover:not(:disabled) { border-color: #a9c3b4; background: #f7faf7; }
 .button-outline:disabled, .export-menu button:disabled { opacity: .5; cursor: not-allowed; }
 .export-menu { display: flex; gap: 5px; }
-.button-export-json { min-height: 36px; border-color: #dbe2dc; background: #fff; color: #50615d; }
+.button-export-json, .button-export-cs { min-height: 36px; border-color: #dbe2dc; background: #fff; color: #50615d; }
 .disabled { opacity: .42; pointer-events: none; }
 .leave-warning { display: flex; align-items: center; gap: 13px; margin: 13px 0 0; padding: 11px 13px; border: 1px solid #ead8b4; border-radius: 7px; background: #fff8e9; color: #725d36; font-size: 10px; }
 .leave-warning span { margin-right: auto; }
@@ -523,7 +523,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .button-dark { background: #e85d22; color: #fff; box-shadow: 0 5px 12px rgba(213,81,28,.16); }
 .button-dark:hover:not(:disabled) { background: #c84918; }
 .button-dark span { color: #fff; }
-.button-quiet, .button-outline, .button-export-json { border-color: #f0d7ca; background: #fff; color: #794c38; }
+.button-quiet, .button-outline, .button-export-json, .button-export-cs { border-color: #f0d7ca; background: #fff; color: #794c38; }
 .button-quiet:hover, .button-outline:hover:not(:disabled) { border-color: #e9a47e; background: #fff8f4; }
 .hero-trust { color: #8d7264; }
 .hero-trust>span { color: #eb783d; }
