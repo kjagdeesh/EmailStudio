@@ -36,7 +36,6 @@ jobs:
           html = index.read_text(encoding="utf-8")
           index.write_text(html.replace('<base href="/" />', f'<base href="{base}" />'), encoding="utf-8")
           PY
-      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: publish/wwwroot
